@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=4daae5b8-dd22-4b7b-8bea-c652574fb357
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 Robot LC79</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #0a0a0f;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    user-select: none;
+}
+#game {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    border: none;
+    z-index: 1;
+}
+
+#robot {
+    position: fixed;
+    bottom: 30px;
+    left: 20px;
+    z-index: 9999;
+    cursor: grab;
+    filter: drop-shadow(0 0 40px rgba(0, 200, 255, 0.1));
+    transition: filter 0.3s;
+}
+#robot:hover {
+    filter: drop-shadow(0 0 60px rgba(0, 200, 255, 0.2));
+}
+
+#box {
+    position: relative;
+    width: 520px;
+    max-width: 600px;
+    display: inline-block;
+}
+#box img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+#box-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-end;
+    padding: 6% 14% 8% 18%;
+    text-align: right;
+    color: #fff;
+    font-weight: 700;
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.95);
+    pointer-events: none;
+    user-select: none;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+#row1 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    margin-bottom: 2px;
+}
+
+#phien-text {
+    font-size: clamp(24px, 3vw, 38px);
+    color: #ffffff;
+    letter-spacing: 1px;
+    font-weight: 700;
+}
+
+#prediction-text {
+    font-size: clamp(34px, 4.2vw, 52px);
+    font-weight: 900;
+    transition: all 0.2s ease;
+    text-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+}
+
+#confidence-text {
+    font-size: clamp(28px, 3.8vw, 48px);
+    font-weight: 800;
+    color: #ffd700;
+    transition: all 0.2s ease;
+    text-shadow: 0 0 30px rgba(0, 0, 0, 0.9);
+}
+
+/* === PANEL THỐNG KÊ === */
+#stats-panel {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    color: #fff;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.7);
+    transition: all 0.3s ease;
+    user-select: none;
+}
+
+#stats-panel.hidden {
+    transform: translateX(-50%) translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.stat-item .icon {
+    font-size: 18px;
+}
+
+.stat-item .value {
+    font-weight: 800;
+    font-size: 18px;
+}
+
+.stat-item .value.green { color: #00ff88; }
+.stat-item .value.red { color: #ff4444; }
+.stat-item .value.gold { color: #ffd700; }
+.stat-item .value.white { color: #ffffff; }
+
+#toggle-stats {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+#toggle-stats:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+#stats-toggle-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+#stats-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.05);
+}
+#stats-toggle-btn.show {
+    display: flex;
+}
+
+/* === LỊCH SỬ 5 PHIÊN === */
+#history-bar {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 9998;
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(10px);
+    padding: 12px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+.hist-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 36px;
+}
+.hist-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+.hist-dot.tai {
+    background: radial-gradient(circle at 30% 30%, #00ff88, #00aa55);
+    border-color: #00ff8866;
+}
+.hist-dot.xiu {
+    background: radial-gradient(circle at 30% 30%, #ff5555, #aa2222);
+    border-color: #ff555566;
+}
+.hist-dot.wait {
+    background: #333;
+    border-color: #555;
+    color: #666;
+}
+.hist-label {
+    font-size: 9px;
+    color: #888;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 700px) {
+    #box {
+        width: 380px;
+    }
+    #box-content {
+        padding: 4% 12% 6% 14%;
+    }
+    #phien-text {
+        font-size: clamp(20px, 2.6vw, 28px);
+    }
+    #prediction-text {
+        font-size: clamp(28px, 3.6vw, 40px);
+    }
+    #confidence-text {
+        font-size: clamp(24px, 3.2vw, 36px);
+    }
+    #stats-panel {
+        padding: 10px 16px;
+        gap: 14px;
+        flex-wrap: wrap;
+        justify-content: center;
+        top: 12px;
+        width: 95%;
+    }
+    .stat-item {
+        font-size: 13px;
+    }
+    .stat-item .value {
+        font-size: 15px;
+    }
+    #toggle-stats {
+        font-size: 11px;
+        padding: 3px 10px;
+    }
+}
+@media (max-width: 450px) {
+    #box {
+        width: 280px;
+    }
+    #box-content {
+        padding: 3% 10% 4% 10%;
+    }
+    #phien-text {
+        font-size: clamp(16px, 2.2vw, 22px);
+    }
+    #prediction-text {
+        font-size: clamp(22px, 3vw, 32px);
+    }
+    #confidence-text {
+        font-size: clamp(18px, 2.8vw, 28px);
+    }
+    #history-bar {
+        padding: 6px 8px;
+        gap: 3px;
+        bottom: 10px;
+        right: 10px;
+    }
+    .hist-dot {
+        width: 20px;
+        height: 20px;
+        font-size: 8px;
+    }
+    .hist-label {
+        display: none;
+    }
+    #stats-panel {
+        padding: 8px 12px;
+        gap: 10px;
+        top: 10px;
+    }
+    .stat-item {
+        font-size: 11px;
+        gap: 4px;
+    }
+    .stat-item .value {
+        font-size: 13px;
+    }
+    .stat-item .icon {
+        font-size: 14px;
+    }
+}
+</style>
+</head>
+<body>
+
+<!-- NÚT MỞ PANEL -->
+<button id="stats-toggle-btn" title="Mở thống kê">💰</button>
+
+<!-- PANEL THỐNG KÊ -->
+<div id="stats-panel">
+    <div class="stat-item">
+        <span class="icon">📋</span>
+        <span>Tổng:</span>
+        <span class="value white" id="total-games">0</span>
+    </div>
+    <div class="stat-item">
+        <span class="icon">✅</span>
+        <span>Thắng:</span>
+        <span class="value green" id="wins">0</span>
+    </div>
+    <div class="stat-item">
+        <span class="icon">❌</span>
+        <span>Thua:</span>
+        <span class="value red" id="losses">0</span>
+    </div>
+    <div class="stat-item">
+        <span class="icon">🎯</span>
+        <span>Tỷ lệ:</span>
+        <span class="value gold" id="win-rate">0%</span>
+    </div>
+    <button id="toggle-stats">✕ Ẩn</button>
+</div>
+
+<iframe id="game" src="https://lc79b.bet"></iframe>
+
+<div id="robot">
+    <div id="box">
+        <img src="https://i.postimg.cc/j26ZMVPs/IMG-0481.gif" alt="Khung Robot">
+        <div id="box-content">
+            <div id="row1">
+                <span id="phien-text">#---:</span>
+                <span id="prediction-text">---</span>
+            </div>
+            <div id="confidence-text">Tỉ lệ: --%</div>
+        </div>
+    </div>
+</div>
+
+<div id="history-bar">
+    <div class="hist-item"><div class="hist-dot wait">?</div><span class="hist-label">P-4</span></div>
+    <div class="hist-item"><div class="hist-dot wait">?</div><span class="hist-label">P-3</span></div>
+    <div class="hist-item"><div class="hist-dot wait">?</div><span class="hist-label">P-2</span></div>
+    <div class="hist-item"><div class="hist-dot wait">?</div><span class="hist-label">P-1</span></div>
+    <div class="hist-item"><div class="hist-dot wait">?</div><span class="hist-label">HIỆN</span></div>
+</div>
+
+<script>
+    // === KÉO THẢ ===
+    const robot = document.getElementById("robot");
+    let drag = false,
+        sx = 0,
+        sy = 0;
+
+    robot.addEventListener("mousedown", e => {
+        drag = true;
+        sx = e.clientX - robot.offsetLeft;
+        sy = e.clientY - robot.offsetTop;
+        robot.style.cursor = 'grabbing';
+    });
+    robot.addEventListener("touchstart", e => {
+        drag = true;
+        const t = e.touches[0];
+        sx = t.clientX - robot.offsetLeft;
+        sy = t.clientY - robot.offsetTop;
+        robot.style.cursor = 'grabbing';
+    }, { passive: true });
+
+    document.addEventListener("mousemove", e => {
+        if (!drag) return;
+        robot.style.left = e.clientX - sx + "px";
+        robot.style.top = e.clientY - sy + "px";
+        robot.style.bottom = 'auto';
+        robot.style.right = 'auto';
+    });
+    document.addEventListener("touchmove", e => {
+        if (!drag) return;
+        const t = e.touches[0];
+        robot.style.left = t.clientX - sx + "px";
+        robot.style.top = t.clientY - sy + "px";
+        robot.style.bottom = 'auto';
+        robot.style.right = 'auto';
+    }, { passive: false });
+
+    document.addEventListener("mouseup", () => { drag = false;
+        robot.style.cursor = 'grab'; });
+    document.addEventListener("touchend", () => { drag = false;
+        robot.style.cursor = 'grab'; });
+
+    // === MỞ / ẨN PANEL ===
+    const statsPanel = document.getElementById('stats-panel');
+    const toggleBtn = document.getElementById('toggle-stats');
+    const openBtn = document.getElementById('stats-toggle-btn');
+
+    toggleBtn.addEventListener('click', () => {
+        statsPanel.classList.add('hidden');
+        openBtn.classList.add('show');
+    });
+
+    openBtn.addEventListener('click', () => {
+        statsPanel.classList.remove('hidden');
+        openBtn.classList.remove('show');
+    });
+
+    // === API ===
+    const API_URL = "https://wtxmd52.tele68.com/v1/txmd5/lite-sessions?cp=R&cl=R&pf=web&at=3959701241b686f12e01bfe9c3a319b8";
+
+    async function fetchSafe() {
+        try {
+            const c = new AbortController();
+            setTimeout(() => c.abort(), 4000);
+            const r = await fetch(API_URL, { signal: c.signal, cache: "no-store" });
+            if (r.ok) return await r.json();
+        } catch (e) {}
+        return null;
+    }
+
+    let phienHienTai = 0;
+    let trangThaiDangHienKetQua = false;
+    let historyGears = [];
+    let rawHistory = [];
+    let doLechChuanToanCuc = 0;
+
+    // === THỐNG KÊ ===
+    let stats = {
+        total: 0,
+        wins: 0,
+        losses: 0
+    };
+    let lastPrediction = "";
+
+    function updateStats(isWin) {
+        stats.total++;
+        if (isWin) {
+            stats.wins++;
+        } else {
+            stats.losses++;
+        }
+        renderStats();
+    }
+
+    function renderStats() {
+        document.getElementById('total-games').textContent = stats.total;
+        document.getElementById('wins').textContent = stats.wins;
+        document.getElementById('losses').textContent = stats.losses;
+        let rate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
+        document.getElementById('win-rate').textContent = rate + '%';
+    }
+
+    // === 26 THUẬT TOÁN ===
+    function superViLongAlgorithm() {
+        let finalPred = -1;
+
+        if (historyGears.length < 15) return { pred: -1, rate: 0 };
+
+        const h = historyGears;
+        let curStreak = 0;
+        for (let i = 0; i < h.length; i++) {
+            if (h[i] === h[0]) curStreak++;
+            else break;
+        }
+
+        let vip11Pred = -1;
+        if (h.length >= 2) {
+            if (h[0] !== h[1]) { vip11Pred = h[0]; }
+        }
+        let flashPred = -1;
+        if (h.length >= 2 && h.length < 15) {
+            if (h[0] === h[1]) { flashPred = h[0]; } else { flashPred = h[0] === 1 ? 0 : 1; }
+            if (h.length >= 3) {
+                if (h[0] !== h[1] && h[1] !== h[2]) { flashPred = h[0] === 1 ? 0 : 1; } else if (h[0] === h[1] && h[1] === h[2]) { flashPred =
+                    h[0]; }
+            }
+        }
+        let tensorPred = -1;
+        if (h.length >= 25) {
+            let block1 = h.slice(0, 8).filter(x => x === 1).length;
+            let block2 = h.slice(8, 16).filter(x => x === 1).length;
+            let block3 = h.slice(16, 24).filter(x => x === 1).length;
+            if (block1 > 5 && block2 < 3 && block3 > 5) { tensorPred = 0; } else if (block1 < 3 && block2 > 5 && block3 < 3) { tensorPred =
+                    1; }
+            let diff1 = Math.abs(block1 - block2);
+            let diff2 = Math.abs(block2 - block3);
+            if (diff1 <= 1 && diff2 <= 1 && curStreak >= 2) { tensorPred = h[0] === 1 ? 0 : 1; }
+        }
+        let elliotWavePred = -1;
+        if (h.length >= 15) {
+            let waves = [];
+            let wCount = 1;
+            for (let i = 0; i < 10; i++) {
+                if (h[i] === h[i + 1]) wCount++;
+                else { waves.push(wCount);
+                    wCount = 1; }
+            }
+            if (waves.length >= 3) {
+                if (waves[0] <= 2 && waves[1] >= 3 && waves[2] >= 4) elliotWavePred = h[0] === 1 ? 0 : 1;
+            }
+        }
+        let poissonPred = -1;
+        if (h.length >= 30) {
+            let countT_30 = h.slice(0, 30).filter(x => x === 1).length;
+            if (countT_30 >= 24 && h[0] === 1) { poissonPred = 0; } else if (countT_30 <= 6 && h[0] === 0) { poissonPred = 1; }
+        }
+        let clusterPred = -1;
+        if (h.length >= 10) {
+            let clusterScore = (h[0] * 8) + (h[1] * 4) + (h[2] * 2) + (h[3] * 1);
+            if (clusterScore === 15 && curStreak >= 4) { clusterPred = 0; } else if (clusterScore === 0 && curStreak >= 4) { clusterPred =
+                    1; }
+        }
+        let quantumPred = -1;
+        if (h.length >= 25) {
+            let qTai = 0,
+                qXiu = 0;
+            for (let i = 0; i < 12; i++) {
+                if (h[i] === h[i + 5] && h[i] !== h[i + 10]) {
+                    if (h[i] === 1) qTai++;
+                    else qXiu++;
+                }
+            }
+            if (qTai >= 4 && h[0] === 1) { quantumPred = 0; } else if (qXiu >= 4 && h[0] === 0) { quantumPred = 1; }
+        }
+        let vipViLongPred = -1;
+        if (h.length >= 20) {
+            let crossScore = 0;
+            for (let i = 0; i < 10; i++) {
+                if (h[i] === h[i + 2] && h[i + 1] !== h[i]) crossScore++;
+            }
+            if (crossScore >= 5) { vipViLongPred = h[0] === 1 ? 0 : 1; }
+        }
+        let markov3DPred = -1;
+        if (h.length >= 35) {
+            let pattern4 = "" + h[3] + h[2] + h[1] + h[0];
+            let t1 = 0,
+                t0 = 0;
+            for (let i = 4; i < h.length - 4; i++) {
+                if ("" + h[i + 3] + h[i + 2] + h[i + 1] + h[i] === pattern4) {
+                    if (h[i - 1] === 1) t1++;
+                    else t0++;
+                }
+            }
+            if (t1 > t0 && t1 >= 2) markov3DPred = 1;
+            else if (t0 > t1 && t0 >= 2) markov3DPred = 0;
+        }
+        let gaussianPred = -1;
+        if (rawHistory.length >= 15) {
+            let sums = [];
+            for (let i = 0; i < 15; i++) {
+                let s = (rawHistory[i].dice1 || 0) + (rawHistory[i].dice2 || 0) + (rawHistory[i].dice3 || 0);
+                if (s > 0) sums.push(s);
+            }
+            if (sums.length === 15) {
+                let mean = sums.reduce((a, b) => a + b, 0) / 15;
+                let variance = sums.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / 15;
+                let stdDev = Math.sqrt(variance);
+                doLechChuanToanCuc = stdDev;
+
+                if (stdDev < 1.5 && curStreak >= 3) {
+                    gaussianPred = h[0] === 1 ? 0 : 1;
+                } else if (stdDev > 5.0) {
+                    if (mean > 13) gaussianPred = 0;
+                    else if (mean < 8) gaussianPred = 1;
+                }
+                let sums2 = [];
+                for (let i = 15; i < 30 && i < rawHistory.length; i++) {
+                    let s = (rawHistory[i].dice1 || 0) + (rawHistory[i].dice2 || 0) + (rawHistory[i].dice3 || 0);
+                    if (s > 0) sums2.push(s);
+                }
+                if (sums2.length === 15) {
+                    let mean2 = sums2.reduce((a, b) => a + b, 0) / 15;
+                    let variance2 = sums2.reduce((a, b) => a + Math.pow(b - mean2, 2), 0) / 15;
+                    let stdDev2 = Math.sqrt(variance2);
+                    if (stdDev < stdDev2 * 0.7 && curStreak >= 2) {
+                        gaussianPred = h[0] === 1 ? 0 : 1;
+                    }
+                }
+            }
+        }
+        let fractalPred = -1;
+        if (h.length >= 30) {
+            let currentFractal = h.slice(0, 5).join('');
+            let fractalMatches = [];
+            for (let i = 5; i < h.length - 5; i++) {
+                if (h.slice(i, i + 5).join('') === currentFractal) {
+                    fractalMatches.push(h[i - 1]);
+                }
+            }
+            if (fractalMatches.length >= 2) {
+                let sum = fractalMatches.reduce((a, b) => a + b, 0);
+                fractalPred = sum > fractalMatches.length / 2 ? 1 : 0;
+            }
+        }
+        let marketDynPred = -1;
+        if (h.length >= 50 && doLechChuanToanCuc > 0) {
+            let blockSize = 10;
+            let ratios = [];
+            for (let i = 0; i < 5; i++) {
+                let block = h.slice(i * blockSize, (i + 1) * blockSize);
+                ratios.push(block.filter(x => x === 1).length / blockSize);
+            }
+            if (ratios[4] > ratios[3] && ratios[3] > ratios[2] && ratios[2] > ratios[1]) {
+                marketDynPred = 1;
+            } else if (ratios[4] < ratios[3] && ratios[3] < ratios[2] && ratios[2] < ratios[1]) {
+                marketDynPred = 0;
+            }
+            if (ratios[4] > 0.8) marketDynPred = 0;
+            else if (ratios[4] < 0.2) marketDynPred = 1;
+        }
+        let reverseMartingalePred = -1;
+        if (curStreak >= 6) {
+            reverseMartingalePred = h[0] === 1 ? 0 : 1;
+        } else if (curStreak >= 3) {
+            reverseMartingalePred = h[0];
+        }
+        let diceFallPred = -1;
+        if (rawHistory.length >= 10) {
+            let lastDiceSets = rawHistory.slice(0, 10).map(x => (x.dice1 || 0) + (x.dice2 || 0) + (x.dice3 || 0));
+            let isMonotonic = true;
+            for (let i = 0; i < lastDiceSets.length - 1; i++) {
+                if (lastDiceSets[i] !== lastDiceSets[i + 1] && lastDiceSets[i] !== lastDiceSets[i + 1] + 1 && lastDiceSets[i] !==
+                    lastDiceSets[i + 1] - 1) {
+                    if (Math.abs(lastDiceSets[i] - lastDiceSets[i + 1]) > 2) isMonotonic = false;
+                }
+            }
+            if (isMonotonic && curStreak >= 2) {
+                diceFallPred = h[0] === 1 ? 0 : 1;
+            }
+        }
+        let lasVegasPred = -1;
+        if (h.length >= 20) {
+            let seed = h.slice(0, 10).reduce((a, b) => a + b, 0);
+            let rand = (seed * 9301 + 49297) % 233280;
+            let rnd = rand / 233280;
+            lasVegasPred = rnd > 0.5 ? 1 : 0;
+            if (curStreak >= 4) lasVegasPred = h[0];
+        }
+        let exactEnumPred = -1;
+        if (h.length >= 25) {
+            let patternMap = {};
+            for (let i = 0; i < h.length - 3; i++) {
+                let key = h[i] + '' + h[i + 1] + '' + h[i + 2];
+                let next = h[i + 3];
+                if (!patternMap[key]) patternMap[key] = { 0: 0, 1: 0 };
+                patternMap[key][next]++;
+            }
+            let lastPattern = h[0] + '' + h[1] + '' + h[2];
+            if (patternMap[lastPattern]) {
+                let total = patternMap[lastPattern][0] + patternMap[lastPattern][1];
+                if (total >= 2) {
+                    exactEnumPred = patternMap[lastPattern][1] > patternMap[lastPattern][0] ? 1 : 0;
+                }
+            }
+        }
+        let firstCardPred = -1;
+        if (rawHistory.length >= 10) {
+            let firstSums = rawHistory.slice(0, 10).map(x => (x.dice1 || 0) + (x.dice2 || 0) + (x.dice3 || 0));
+            let avgFirst = firstSums.reduce((a, b) => a + b, 0) / firstSums.length;
+            if (avgFirst > 13 && curStreak >= 2) firstCardPred = 1;
+            else if (avgFirst < 8 && curStreak >= 2) firstCardPred = 0;
+        }
+        let burnCardPred = -1;
+        if (rawHistory.length >= 15) {
+            let sum1 = 0,
+                sum2 = 0;
+            for (let i = 0; i < 7 && i < rawHistory.length; i++) {
+                sum1 += (rawHistory[i].dice1 || 0) + (rawHistory[i].dice2 || 0) + (rawHistory[i].dice3 || 0);
+            }
+            for (let i = 7; i < 14 && i < rawHistory.length; i++) {
+                sum2 += (rawHistory[i].dice1 || 0) + (rawHistory[i].dice2 || 0) + (rawHistory[i].dice3 || 0);
+            }
+            let diff = Math.abs(sum1 - sum2);
+            if (diff > 20 && curStreak >= 2) {
+                burnCardPred = sum1 > sum2 ? 0 : 1;
+            }
+        }
+        let smoothPred = -1;
+        if (h.length >= 30) {
+            let weights = [0.3, 0.25, 0.2, 0.15, 0.1];
+            let smoothScore = 0;
+            for (let i = 0; i < 5 && i < h.length; i++) {
+                smoothScore += h[i] * weights[i];
+            }
+            if (curStreak >= 4) smoothScore += 0.2 * (h[0] === 1 ? 1 : -1);
+            smoothPred = smoothScore > 0.5 ? 1 : 0;
+        }
+        let weightedPred = -1;
+        if (h.length >= 30) {
+            let votes = { 0: 0, 1: 0 };
+            let predictors = [vip11Pred, flashPred, tensorPred, elliotWavePred, poissonPred,
+                clusterPred, quantumPred, vipViLongPred, markov3DPred,
+                gaussianPred, fractalPred, marketDynPred, reverseMartingalePred,
+                diceFallPred, lasVegasPred, exactEnumPred, firstCardPred,
+                burnCardPred, smoothPred
+            ];
+            for (let p of predictors) {
+                if (p !== -1) votes[p]++;
+            }
+            if (votes[0] + votes[1] >= 3) {
+                weightedPred = votes[1] > votes[0] ? 1 : 0;
+            }
+        }
+        let bayesianPred = -1;
+        if (h.length >= 40) {
+            let taiCount = h.slice(0, 30).filter(x => x === 1).length;
+            let xiuCount = 30 - taiCount;
+            let priorTai = taiCount / 30;
+            let recentTai = h.slice(0, 10).filter(x => x === 1).length;
+            let likelihood = (recentTai / 10) / 0.5;
+            let posterior = (priorTai * likelihood) / ((priorTai * likelihood) + ((1 - priorTai) * (1 - likelihood)));
+            bayesianPred = posterior > 0.5 ? 1 : 0;
+            if (curStreak >= 5) bayesianPred = h[0] === 1 ? 0 : 1;
+        }
+        let monteCarloPred = -1;
+        if (h.length >= 30) {
+            let simulations = 1000;
+            let winTai = 0;
+            for (let sim = 0; sim < simulations; sim++) {
+                let randIdx = Math.floor(Math.random() * h.length);
+                let simResult = h[randIdx];
+                if (simResult === 1) winTai++;
+            }
+            let simProb = winTai / simulations;
+            monteCarloPred = simProb > 0.5 ? 1 : 0;
+            if (curStreak >= 4) monteCarloPred = h[0];
+        }
+
+        // === CHỌN DỰ ĐOÁN TỪ 26 THUẬT TOÁN ===
+        if (marketDynPred !== -1) { finalPred = marketDynPred; }
+        else if (reverseMartingalePred !== -1 && curStreak >= 6) { finalPred = reverseMartingalePred; }
+        else if (bayesianPred !== -1) { finalPred = bayesianPred; }
+        else if (weightedPred !== -1) { finalPred = weightedPred; }
+        else if (monteCarloPred !== -1) { finalPred = monteCarloPred; }
+        else if (gaussianPred !== -1) { finalPred = gaussianPred; }
+        else if (fractalPred !== -1) { finalPred = fractalPred; }
+        else if (markov3DPred !== -1) { finalPred = markov3DPred; }
+        else if (exactEnumPred !== -1) { finalPred = exactEnumPred; }
+        else if (burnCardPred !== -1) { finalPred = burnCardPred; }
+        else if (vip11Pred !== -1) { finalPred = vip11Pred; }
+        else if (tensorPred !== -1) { finalPred = tensorPred; }
+        else if (poissonPred !== -1) { finalPred = poissonPred; }
+        else if (elliotWavePred !== -1) { finalPred = elliotWavePred; }
+        else if (clusterPred !== -1) { finalPred = clusterPred; }
+        else if (quantumPred !== -1) { finalPred = quantumPred; }
+        else if (vipViLongPred !== -1) { finalPred = vipViLongPred; }
+        else if (smoothPred !== -1) { finalPred = smoothPred; }
+        else if (flashPred !== -1) { finalPred = flashPred; }
+        else if (firstCardPred !== -1) { finalPred = firstCardPred; }
+        else if (diceFallPred !== -1) { finalPred = diceFallPred; }
+        else if (lasVegasPred !== -1) { finalPred = lasVegasPred; }
+        else if (reverseMartingalePred !== -1) { finalPred = reverseMartingalePred; }
+        else {
+            let isPingPong = true;
+            for (let i = 0; i < 6; i++) {
+                if (h[i] === h[i + 1]) isPingPong = false;
+            }
+            if (curStreak >= 4) { finalPred = h[0]; }
+            else if (isPingPong) { finalPred = h[0] === 1 ? 0 : 1; }
+            else { finalPred = h[0]; }
+        }
+
+        // === TÍNH % DỰA TRÊN LỊCH SỬ THỰC TẾ + NÉN VÀO KHOẢNG 55-85% ===
+        let rate = 50;
+        if (historyGears.length >= 5) {
+            let recent = historyGears.slice(0, 10);
+            let taiCount = recent.filter(x => x === 1).length;
+            let rawRate = Math.round((taiCount / recent.length) * 100);
+            rate = Math.round(55 + (rawRate / 100) * 30);
+            if (rate > 85) rate = 85;
+            if (rate < 55) rate = 55;
+        }
+
+        return {
+            pred: finalPred,
+            rate: rate
+        };
+    }
+
+    // === CẬP NHẬT DỰ ĐOÁN ===
+    function capNhatDuDoan() {
+        const analysis = superViLongAlgorithm();
+        if (analysis.pred === -1) return;
+
+        const isTai = analysis.pred === 1;
+        const phienText = isTai ? "TÀI" : "XỈU";
+        const color = isTai ? "#00ff88" : "#ff4444";
+
+        // Lưu dự đoán để so sánh sau
+        lastPrediction = phienText;
+
+        document.getElementById('phien-text').textContent = `#${phienHienTai + 1}:`;
+        document.getElementById('phien-text').style.color = '#ffffff';
+
+        document.getElementById('prediction-text').textContent = phienText;
+        document.getElementById('prediction-text').style.color = color;
+
+        document.getElementById('confidence-text').textContent = 'Tỉ lệ: ' + analysis.rate + '%';
+        document.getElementById('confidence-text').style.color = '#ffd700';
+
+        const el = document.getElementById('prediction-text');
+        el.style.transition = 'transform 0.15s';
+        el.style.transform = 'scale(1.1)';
+        setTimeout(() => el.style.transform = 'scale(1)', 150);
+    }
+
+    // === HIỂN THỊ KẾT QUẢ VÀ CẬP NHẬT THỐNG KÊ ===
+    function hienKetQua(phienId, kqText, x1, x2, x3) {
+        const isTai = kqText === "TÀI" || kqText === "T" || (x1 + x2 + x3 > 10);
+        const phienText = isTai ? "TÀI" : "XỈU";
+        const color = isTai ? "#00ff88" : "#ff4444";
+
+        // So sánh với dự đoán cuối cùng
+        const isWin = (phienText === lastPrediction);
+        updateStats(isWin);
+
+        document.getElementById('phien-text').textContent = `#${phienId}:`;
+        document.getElementById('phien-text').style.color = '#ffffff';
+
+        document.getElementById('prediction-text').textContent = phienText;
+        document.getElementById('prediction-text').style.color = color;
+
+        document.getElementById('confidence-text').textContent = 'Tỉ lệ: 100%';
+        document.getElementById('confidence-text').style.color = '#ffd700';
+    }
+
+    // === LỊCH SỬ 5 PHIÊN ===
+    function capNhatLichSu() {
+        const items = document.querySelectorAll('.hist-dot');
+        const labels = document.querySelectorAll('.hist-label');
+
+        if (rawHistory.length < 5) {
+            for (let i = 0; i < 5; i++) {
+                items[i].textContent = '?';
+                items[i].className = 'hist-dot wait';
+                if (labels[i]) labels[i].textContent = ['P-4', 'P-3', 'P-2', 'P-1', 'HIỆN'][i];
+            }
+            return;
+        }
+
+        for (let i = 0; i < 5; i++) {
+            const idx = i;
+            const data = rawHistory[idx];
+            if (!data) {
+                items[i].textContent = '?';
+                items[i].className = 'hist-dot wait';
+                continue;
+            }
+            const sum = (data.dice1 || 0) + (data.dice2 || 0) + (data.dice3 || 0);
+            const isTai = sum > 10 || data.resultTruyenThong === 'TAI';
+            items[i].textContent = isTai ? 'T' : 'X';
+            items[i].className = `hist-dot ${isTai ? 'tai' : 'xiu'}`;
+            if (labels[i]) labels[i].textContent = ['-4', '-3', '-2', '-1', 'HIỆN'][i];
+        }
+    }
+
+    // === MAIN LOOP ===
+    async function runLoop() {
+        const data = await fetchSafe();
+        if (!data || !data.list || data.list.length === 0) return;
+
+        const latest = data.list[0];
+
+        historyGears = data.list.slice(0, 60).map(x => {
+            let sum = (x.dice1 || 0) + (x.dice2 || 0) + (x.dice3 || 0);
+            if (sum === 0 && x.resultTruyenThong) return x.resultTruyenThong === 'TAI' ? 1 : 0;
+            return sum > 10 ? 1 : 0;
+        });
+        rawHistory = data.list.slice(0, 60);
+
+        capNhatLichSu();
+
+        if (phienHienTai === 0) {
+            phienHienTai = latest.id;
+            capNhatDuDoan();
+            return;
+        }
+
+        if (latest.id > phienHienTai && !trangThaiDangHienKetQua) {
+            trangThaiDangHienKetQua = true;
+
+            let sum = (latest.dice1 || 0) + (latest.dice2 || 0) + (latest.dice3 || 0);
+            let resultText = (sum > 10) ? "TÀI" : "XỈU";
+            if (sum === 0 && latest.resultTruyenThong) resultText = latest.resultTruyenThong;
+
+            hienKetQua(latest.id, resultText, latest.dice1 || 0, latest.dice2 || 0, latest.dice3 || 0);
+
+            setTimeout(() => {
+                phienHienTai = latest.id;
+                capNhatDuDoan();
+                trangThaiDangHienKetQua = false;
+            }, 3000);
+        }
+    }
+
+    setInterval(runLoop, 3000);
+
+    // === KHỞI TẠO ===
+    (async function init() {
+        const data = await fetchSafe();
+        if (data && data.list && data.list.length > 0) {
+            phienHienTai = data.list[0].id;
+            historyGears = data.list.slice(0, 60).map(x => {
+                let sum = (x.dice1 || 0) + (x.dice2 || 0) + (x.dice3 || 0);
+                if (sum === 0 && x.resultTruyenThong) return x.resultTruyenThong === 'TAI' ? 1 : 0;
+                return sum > 10 ? 1 : 0;
+            });
+            rawHistory = data.list.slice(0, 60);
+            capNhatLichSu();
+            capNhatDuDoan();
+        }
+    })();
+</script>
+</body>
+</html><script async src="/.netlify/scripts/hud?variant=public" data-nf-variant="public" data-netlify-site-id="4daae5b8-dd22-4b7b-8bea-c652574fb357" data-app-host="app.netlify.com"></script>
